@@ -19,7 +19,8 @@ parser.add_argument("--epsilon", type=float, default=0.2)
 
 arg = parser.parse_args()
 
-env = gym.make('FrozenLake-v0')
+# env = gym.make('FrozenLake8x8-v0')
+env = gym.make("Taxi-v3")
 policy = np.random.uniform(0, 1.0, (env.nS, env.nA))
 action_values = np.random.uniform(0, 1.0, (env.nS, env.nA))
 
@@ -37,7 +38,7 @@ def sample(num):
     for e in range(num):
         state = env.reset()
         episode = list()
-        for i in range(100):
+        while True:
             action_prob = policy[state]
             best_action = np.argmax(action_prob)
             action_prob = np.ones_like(action_prob) * arg.epsilon / env.nA
@@ -78,7 +79,7 @@ for _ in trange(10):
         action_prob[best_action] += 1.0 - arg.epsilon
         action = np.random.choice(np.arange(env.nA), p=action_prob)
         policy[s] = np.zeros(env.nA)
-        policy[s][np.argmax(action_value)] = 1.
+        policy[s][action] = 1.
 
 win_time = 0
 for _ in trange(arg.test_time):
@@ -87,7 +88,7 @@ for _ in trange(arg.test_time):
         action = np.argmax(policy[obs])
         obs, reward, done, info = env.step(action)
         if done:
-            if reward == 1:
+            if reward == 20.:
                 win_time += 1
             break
 print(win_time / arg.test_time)

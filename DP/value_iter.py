@@ -9,10 +9,11 @@ np.set_printoptions(suppress=True)
 parser = argparse.ArgumentParser()
 parser.add_argument("--gamma", type=float, default=1.0)
 parser.add_argument("--th", type=float, default=1e-5)
-parser.add_argument("--test_time", type=int, default=1000)
+parser.add_argument("--test_time", type=int, default=100)
 
 arg = parser.parse_args()
-env = gym.make('FrozenLake8x8-v0')
+# env = gym.make('FrozenLake8x8-v0')
+env = gym.make("Taxi-v3")
 V = np.zeros(env.nS)
 for _ in range(100):
     for s in range(env.nS):
@@ -40,14 +41,7 @@ for _ in range(arg.test_time):
         action = np.argmax(policy[obs])
         obs, reward, done, info = env.step(action)
         if done:
-            if reward == 1:
+            if reward == 20.:
                 win_time += 1
             break
 print(win_time / arg.test_time)
-
-# policy_ = np.zeros((8, 8))
-# for s in range(env.nS):
-#     row = s // 8
-#     col = s % 8
-#     action = np.argmax(policy[s])
-#     policy_[row][col] = action

@@ -12,7 +12,8 @@ parser.add_argument("--th", type=float, default=1e-5)
 parser.add_argument("--test_time", type=int, default=1000)
 
 arg = parser.parse_args()
-env = gym.make('FrozenLake8x8-v0')
+# env = gym.make('FrozenLake8x8-v0')
+env = gym.make("Taxi-v3")
 policy = np.random.uniform(0, 1.0, (env.nS, env.nA))
 for _ in range(100):
     V = np.zeros(env.nS)
@@ -43,7 +44,7 @@ for _ in range(arg.test_time):
         action = np.argmax(policy[obs])
         obs, reward, done, info = env.step(action)
         if done:
-            if reward == 1:
+            if reward == 20.:
                 win_time += 1
             break
 print(win_time / arg.test_time)
