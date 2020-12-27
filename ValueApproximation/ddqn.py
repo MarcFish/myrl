@@ -20,7 +20,6 @@ parser.add_argument("--test_time", type=int, default=100)
 parser.add_argument("--episode_num", type=int, default=40000)
 parser.add_argument("--lr", type=float, default=1e-4)
 parser.add_argument("--lambda_", type=float, default=0.9)
-parser.add_argument("--action_num", type=int, default=2)
 parser.add_argument("--batch_size", type=int, default=32)
 parser.add_argument("--replay_buffer", type=int, default=4000)
 parser.add_argument("--update_time", type=int, default=100)
@@ -34,7 +33,7 @@ q_value_network = keras.Sequential([
     keras.layers.LeakyReLU(0.2),
     keras.layers.Dense(128),
     keras.layers.LeakyReLU(0.2),
-    keras.layers.Dense(arg.action_num),
+    keras.layers.Dense(env.action_space.n),
 ])
 q_target_network = keras.models.clone_model(q_value_network)
 opt = keras.optimizers.Adam(learning_rate=arg.lr)
@@ -55,12 +54,12 @@ def train_step(state_batch, action_batch, reward_batch, next_state_batch, termin
     q_value_batch = q_value_network(next_state_batch)
     max_action_next = tf.math.argmax(q_value_batch, axis=-1)
     # TODO
-    max_action_next = tf.one_hot(max_action_next, arg.action_num)
+    max_action_next = tf.one_hot(max_action_next, env.action_space.n)
     target_value_batch = tf.einsum("bi,bi->b", q_target_batch, max_action_next)
     y_batch = reward_batch + (1 - terminal_batch) * arg.gamma * target_value_batch
     with tf.GradientTape() as tape:
         q_value_batch = q_value_network(state_batch)
-        action_batch = tf.one_hot(action_batch, arg.action_num)
+        action_batch = tf.one_hot(action_batch, env.action_space.n)
         q_action = tf.reduce_sum(q_value_batch * action_batch, axis=1)
         loss = keras.losses.MSE(y_batch, q_action)
     gradients = tape.gradient(loss, q_value_network.trainable_variables)
@@ -75,9 +74,9 @@ for episode in range(arg.episode_num):
     while True:
         q_value = q_value_network(state.reshape(1, -1)).numpy().squeeze()
         best_action = np.argmax(q_value)
-        action_prob = np.ones_like(q_value) * epsilon / arg.action_num
+        action_prob = np.ones_like(q_value) * epsilon / env.action_space.n
         action_prob[best_action] += 1.0 - epsilon
-        action = np.random.choice(np.arange(arg.action_num), p=action_prob)
+        action = np.random.choice(np.arange(env.action_space.n), p=action_prob)
 
         next_state, reward, done, info = env.step(action)
         episode_reward += reward

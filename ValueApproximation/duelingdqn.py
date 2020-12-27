@@ -20,6 +20,7 @@ parser.add_argument("--test_time", type=int, default=100)
 parser.add_argument("--episode_num", type=int, default=40000)
 parser.add_argument("--lr", type=float, default=1e-4)
 parser.add_argument("--lambda_", type=float, default=0.9)
+parser.add_argument("--action_num", type=int, default=2)
 parser.add_argument("--batch_size", type=int, default=32)
 parser.add_argument("--replay_buffer", type=int, default=4000)
 parser.add_argument("--update_time", type=int, default=100)
@@ -28,13 +29,33 @@ arg = parser.parse_args()
 
 env = gym.make('CartPole-v0')
 
-q_value_network = keras.Sequential([
-    keras.layers.Dense(128),
-    keras.layers.LeakyReLU(0.2),
-    keras.layers.Dense(128),
-    keras.layers.LeakyReLU(0.2),
-    keras.layers.Dense(env.action_space.n),
-])
+
+def create_network(state_shape):
+    state_input = keras.layers.Input(state_shape)
+    network = keras.Sequential([
+        keras.layers.Dense(128),
+        keras.layers.LeakyReLU(0.2),
+        keras.layers.Dense(128),
+        keras.layers.LeakyReLU(0.2),
+    ])
+    v_network = keras.Sequential([
+        keras.layers.Dense(32),
+        keras.layers.LeakyReLU(0.2),
+        keras.layers.Dense(1)
+    ])
+    a_network = keras.Sequential([
+        keras.layers.Dense(64),
+        keras.layers.LeakyReLU(0.2),
+        keras.layers.Dense(env.action_space.n)
+    ])
+    o = network(state_input)
+    v_o = v_network(o)
+    a_o = a_network(o)
+    target_value = v_o + (a_o - tf.reduce_mean(a_o, axis=1, keepdims=True))
+    return keras.Model(inputs=state_input, outputs=target_value)
+
+
+q_value_network = create_network(env.observation_space.shape)
 q_target_network = keras.models.clone_model(q_value_network)
 opt = keras.optimizers.Adam(learning_rate=arg.lr)
 replay_memory = deque()
