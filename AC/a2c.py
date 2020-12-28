@@ -43,11 +43,12 @@ critic_opt = keras.optimizers.Adam(learning_rate=arg.lr)
 @tf.function
 def train_step(state_batch, action_batch, reward_batch):
     with tf.GradientTape(persistent=True) as tape:
-        critic_loss = tf.reduce_mean(tf.math.square(reward_batch - critic_network(state_batch)))
+        advantage = reward_batch - critic_network(state_batch)
+        critic_loss = tf.reduce_mean(tf.math.square(advantage))
         action_prob = actor_network(state_batch)
         action_batch = tf.one_hot(action_batch, env.action_space.n)
         neg_log_prob = tf.reduce_sum(-tf.math.log(action_prob)*action_batch, axis=-1)
-        actor_loss = tf.reduce_mean(neg_log_prob * reward_batch)
+        actor_loss = tf.reduce_mean(neg_log_prob * advantage)
     critic_gradients = tape.gradient(critic_loss, critic_network.trainable_variables)
     critic_opt.apply_gradients(zip(critic_gradients, critic_network.trainable_variables))
     actor_gradients = tape.gradient(actor_loss, actor_network.trainable_variables)
