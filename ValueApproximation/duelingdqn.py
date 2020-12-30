@@ -58,7 +58,7 @@ def create_network(state_shape):
 q_value_network = create_network(env.observation_space.shape)
 q_target_network = keras.models.clone_model(q_value_network)
 opt = keras.optimizers.Adam(learning_rate=arg.lr)
-replay_memory = deque()
+replay_memory = deque(maxlen=arg.replay_buffer)
 epsilon = arg.init_epsilon
 time_step = 0
 
@@ -97,8 +97,6 @@ for episode in range(arg.episode_num):
         next_state, reward, done, info = env.step(action)
         episode_reward += reward
         replay_memory.append((state, action, reward, next_state, int(done)))
-        if len(replay_memory) >= arg.replay_buffer:
-            replay_memory.popleft()
         if len(replay_memory) >= arg.batch_size:
             batch = random.sample(replay_memory, arg.batch_size)
             state_batch = np.ndarray(shape=(arg.batch_size, *state.shape), dtype=np.float32)

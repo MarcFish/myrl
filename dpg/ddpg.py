@@ -28,7 +28,7 @@ env = gym.make('Pendulum-v0')
 
 actor_opt = keras.optimizers.Adam(learning_rate=arg.lr)
 critic_opt = keras.optimizers.Adam(learning_rate=arg.lr)
-replay_memory = deque()
+replay_memory = deque(maxlen=arg.replay_buffer)
 time_step = 0
 var = arg.init_var
 
@@ -112,7 +112,6 @@ for episode in range(arg.episode_num):
         episode_reward += reward
         replay_memory.append((state, action, reward, next_state, int(done)))
         if len(replay_memory) >= arg.replay_buffer:
-            replay_memory.popleft()
             var *= 0.995
         if len(replay_memory) >= arg.batch_size:
             batch = random.sample(replay_memory, arg.batch_size)
